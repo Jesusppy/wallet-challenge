@@ -1,0 +1,52 @@
+version: "3.9"
+services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: wallet
+      MYSQL_USER: wallet
+      MYSQL_PASSWORD: wallet
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "8025:8025"   # UI
+      - "1025:1025"   # SMTP
+
+  wallet-soap:
+    build:
+      context: ./wallet-soap
+    env_file:
+      - ./wallet-soap/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    ports:
+      - "3001:3001"
+    command: ["npm", "run", "start:prod"]
+
+  wallet-rest:
+    build:
+      context: ./wallet-rest
+    env_file:
+      - ./wallet-rest/.env
+    depends_on:
+      - wallet-soap
+    ports:
+      - "3000:3000"
+    command: ["npm", "run", "start:prod"]
+
+volumes:
+  mysql_data:
