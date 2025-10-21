@@ -142,6 +142,23 @@ Estructura de respuesta (SOAP y REST):
 
 ---
 
+## Colección de Postman
+
+- Colección: [wallet-rest.postman_collection.json](./docs/postman/wallet-rest.postman_collection.json)
+- Environment (opcional): [wallet-local.postman_environment.json](./docs/postman/wallet-local.postman_environment.json)
+
+Cómo importar:
+1) Abre Postman y haz clic en Import.
+2) Importa la colección (y opcionalmente el environment).
+3) Selecciona el environment “Wallet Local”.
+4) Ejecuta en orden: Register → TopUp → Initiate → (copia token de Mailhog) → Confirm → Get Balance.
+
+Import directo (raw):
+- Colección: https://raw.githubusercontent.com/Jesusppy/wallet-challenge/main/docs/postman/wallet-rest.postman_collection.json
+- Environment: https://raw.githubusercontent.com/Jesusppy/wallet-challenge/main/docs/postman/wallet-local.postman_environment.json
+
+---
+
 ## Troubleshooting
 
 - REST intentando “localhost” para SOAP:

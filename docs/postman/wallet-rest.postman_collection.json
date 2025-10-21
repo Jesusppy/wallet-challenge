@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "Wallet REST",
+    "_postman_id": "4c2f4d0c-7f9d-43da-a1b7-7d8c3db79f0e",
+    "description": "Colección para probar la API REST del wallet que consume SOAP.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "document", "value": "123" },
+    { "key": "names", "value": "Juan Perez" },
+    { "key": "email", "value": "juan@test.com" },
+    { "key": "phone", "value": "3001234567" },
+    { "key": "amountTopup", "value": "50000" },
+    { "key": "amountPay", "value": "20000" },
+    { "key": "session_id", "value": "" },
+    { "key": "token", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Register Client",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/clients/register", "host": ["{{baseUrl}}"], "path": ["clients", "register"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document\": \"{{document}}\",\n  \"names\": \"{{names}}\",\n  \"email\": \"{{email}}\",\n  \"phone\": \"{{phone}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "TopUp Wallet",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/wallet/topup", "host": ["{{baseUrl}}"], "path": ["wallet", "topup"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document\": \"{{document}}\",\n  \"phone\": \"{{phone}}\",\n  \"amount\": {{amountTopup}}\n}"
+        }
+      }
+    },
+    {
+      "name": "Initiate Payment",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/payments/initiate", "host": ["{{baseUrl}}"], "path": ["payments", "initiate"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"document\": \"{{document}}\",\n  \"phone\": \"{{phone}}\",\n  \"amount\": {{amountPay}}\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "let json = {};",
+              "try { json = pm.response.json(); } catch(e) {}",
+              "if (json && json.data && json.data.session_id) {",
+              "  pm.collectionVariables.set('session_id', json.data.session_id);",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Confirm Payment",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "{{baseUrl}}/payments/confirm", "host": ["{{baseUrl}}"], "path": ["payments", "confirm"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"session_id\": \"{{session_id}}\",\n  \"token\": \"{{token}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Get Balance",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/wallet/balance?document={{document}}&phone={{phone}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["wallet", "balance"],
+          "query": [
+            { "key": "document", "value": "{{document}}"},
+            { "key": "phone", "value": "{{phone}}"}
+          ]
+        }
+      }
+    }
+  ]
+}
