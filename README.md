@@ -1,118 +1,155 @@
-````markdown
 # Wallet Challenge - EPayco
 
-Este proyecto es una solución completa a la prueba técnica para un Desarrollador Backend. Implementa una billetera virtual utilizando una arquitectura de microservicios con un servicio **SOAP** (la fuente de verdad) y un servicio **REST** (el puente para los clientes).
+Este proyecto resuelve la prueba técnica de un Desarrollador Backend implementando una billetera virtual con:
+- Servicio SOAP (fuente de verdad y único con acceso a la BD).
+- Servicio REST (puente moderno que expone JSON y documenta con Swagger).
+- MySQL (persistencia) y Mailhog (emails de prueba).
+- Orquestación completa con Docker Compose.
 
-Todo el sistema está contenedorizado con **Docker**, incluyendo una base de datos **MySQL** y un servidor de correo para pruebas **Mailhog**, lo que garantiza un entorno de desarrollo y evaluación 100% reproducible.
-
-[![Build Status](https://img.shields.io/badge/status-completed-brightgreen)](./)
-[![Stack](https://img.shields.io/badge/stack-NestJS_|_SOAP_|_REST_|_MySQL-blue)](./)
+[![Status](https://img.shields.io/badge/status-completed-brightgreen)](./)
+[![Stack](https://img.shields.io/badge/stack-NestJS%20%7C%20SOAP%20%7C%20REST%20%7C%20MySQL-blue)](./)
 
 ---
 
-## 🚀 Arquitectura y Flujo
+## Arquitectura y flujo
 
-El sistema se compone de dos microservicios independientes:
+Componentes:
+- wallet-soap (NestJS + TypeORM + MySQL): lógica de negocio, contrato WSDL y validación de X-API-KEY. ÚNICO que accede a BD.
+- wallet-rest (NestJS/Express): recibe JSON, llama al SOAP y devuelve la misma estructura de respuesta.
+- MySQL 8: almacenamiento de clientes y sesiones de pago.
+- Mailhog: captura correos (token de 6 dígitos).
+- Docker Compose: levanta todo y define healthchecks.
 
-1.  **`wallet-soap` (NestJS):** Es el **cerebro** de la aplicación.
-    *   **Único con acceso a la base de datos** (MySQL con TypeORM).
-    *   Contiene toda la lógica de negocio (registrar, recargar, pagar, etc.).
-    *   Expone sus funcionalidades a través de un **contrato SOAP (WSDL)**.
-    *   Está protegido por una API Key interna (`X-API-KEY`).
+Flujo (REST → SOAP):
 
-2.  **`wallet-rest` (NestJS):** Es el **puente** moderno para los clientes.
-    *   Expone una **API RESTful documentada interactivamente con Swagger**.
-    *   **No tiene acceso a la base de datos.** Su única función es recibir peticiones JSON, llamar al servicio `wallet-soap`, y devolver la respuesta.
-
-**Flujo de una petición:**
-`Cliente` → `Petición JSON` → `API REST` → `Llamada SOAP/XML` → `Servicio SOAP` → `Lógica + SQL` → `Base de Datos`
-
-```mermaid
-graph LR
-    A[Cliente via Postman/Swagger] -- Petición JSON --> B[wallet-rest (API REST)]
-    B -- Llamada SOAP con API Key --> C[wallet-soap (Lógica de Negocio)]
-    C -- Consultas con TypeORM --> D[(MySQL DB)]
-    E[Mailhog] -- Atrapa Emails para el Token --> C
+```
+Cliente (Postman/Swagger)
+        |
+        v
+  wallet-rest (JSON)
+        |
+        v
+  Llamada SOAP (XML + X-API-KEY)
+        |
+        v
+  wallet-soap (lógica + TypeORM)
+        |
+        v
+        MySQL
 ```
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Endpoints y URLs
 
-| Componente      | Tecnología        | Propósito                                        |
-| --------------- | ----------------- | ------------------------------------------------ |
-| **Servicio SOAP** | NestJS, TypeORM   | Lógica de negocio, acceso a datos, seguridad.    |
-| **Servicio REST** | NestJS, Swagger   | Puente moderno, documentación interactiva.         |
-| **Base de Datos** | MySQL 8.0         | Persistencia de clientes y sesiones de pago.    |
-| **Email Testing** | Mailhog           | Atrapa y muestra emails (token de confirmación). |
-| **Orquestación**  | Docker Compose    | Levanta y conecta todos los servicios.           |
+- Swagger (REST): http://localhost:3000/docs
+- Health (REST): http://localhost:3000/health
+- WSDL (SOAP): http://localhost:3001/wsdl?wsdl
+- Mailhog UI: http://localhost:8025
 
 ---
 
-## ▶️ Cómo Ejecutar el Proyecto
+## Requisitos
 
-### Requisitos
-*   Docker & Docker Compose
+- Docker y Docker Compose
+- Puertos libres: 3000, 3001, 3306, 8025, 1025
 
-### 1. Clonar y Configurar
-```bash
-git clone <URL_DEL_REPO>
-cd wallet-challenge
+---
 
-# Copiar archivos de entorno de ejemplo
+## Configuración
+
+Copia los archivos de entorno de ejemplo:
+
+```
 cp wallet-rest/.env.example wallet-rest/.env
 cp wallet-soap/.env.example wallet-soap/.env
 ```
-_**Nota:** Las contraseñas y claves en los archivos `.env` ya están configuradas para funcionar con Docker Compose._
 
-### 2. Levantar los Servicios
-Este único comando construirá las imágenes y arrancará todos los contenedores en segundo plano.
-```bash
+Variables clave (ya preparadas para Docker):
+- wallet-soap/.env: `API_KEY=supersecret`, `DB_HOST=mysql`, `MAIL_HOST=mailhog`
+- wallet-rest/.env: `SOAP_URL=http://wallet-soap:3001/wsdl?wsdl`, `SOAP_ENDPOINT=http://wallet-soap:3001/wsdl`, `API_KEY=supersecret`
+
+Nota: la `API_KEY` debe coincidir en REST y SOAP.
+
+---
+
+## Cómo ejecutar
+
+Construir y levantar:
+```
 docker compose up -d --build
 ```
 
-### 3. Verificar que todo funciona
-Espera unos 30 segundos mientras la base de datos se inicializa. Luego, revisa los siguientes URLs en tu navegador:
+Verificar estados (healthy):
+```
+docker ps --format "table {{.Names}}\t{{.Status}}"
+```
 
-*   **REST API (Swagger):** [http://localhost:3000/docs](http://localhost:3000/docs)  ➡️  *Tu interfaz de pruebas principal.*
-*   **SOAP Service (WSDL):** [http://localhost:3001/wsdl?wsdl](http://localhost:3001/wsdl?wsdl) ➡️ *Verifica que el servicio SOAP está exponiendo su contrato.*
-*   **Mailhog UI (Correos):** [http://localhost:8025](http://localhost:8025) ➡️ *Aquí verás los emails con los tokens de confirmación.*
-
----
-
-## ✅ Flujo de Prueba Recomendado (End-to-End)
-
-Usa la interfaz de **Swagger** en `http://localhost:3000/docs` para realizar las siguientes operaciones en orden:
-
-1.  **Registrar un Cliente:**
-    *   Usa `POST /clients/register` con los datos de un nuevo cliente.
-    *   Verifica que la respuesta sea `success: true` y `cod_error: '00'`.
-
-2.  **Recargar Saldo:**
-    *   Llama a `POST /wallet/topup` usando el `document` y `phone` del cliente recién creado. Añade un monto, por ejemplo, `50000`.
-    *   La respuesta debe mostrar el nuevo `balance`.
-
-3.  **Iniciar un Pago:**
-    *   Ejecuta `POST /payments/initiate` con los mismos datos del cliente y un monto menor al saldo (ej. `20000`).
-    *   La respuesta te dará una `session_id`. **Cópiala.**
-
-4.  **Verificar el Token:**
-    *   Ve a la interfaz de **Mailhog** (`http://localhost:8025`).
-    *   Abre el correo que ha llegado y **copia el token de 6 dígitos**.
-
-5.  **Confirmar el Pago:**
-    *   Usa `POST /payments/confirm` con la `session_id` que copiaste del paso 3 y el `token` del paso 4.
-    *   Verifica que la respuesta muestre el `balance` final descontado.
-
-6.  **Consultar Saldo:**
-    *   Verifica el nuevo saldo llamando a `GET /wallet/balance` con el `document` y `phone` del cliente. El valor debe coincidir con el del paso anterior.
+Abrir en el navegador:
+- Swagger: http://localhost:3000/docs
+- Mailhog: http://localhost:8025
+- WSDL: http://localhost:3001/wsdl?wsdl
 
 ---
 
-## 💡 Decisiones de Diseño Clave
+## Flujo de prueba (end-to-end)
 
-*   **Arquitectura de Puente (REST sobre SOAP):** Cumple con el requisito de la prueba y aísla la lógica de negocio (SOAP) de la capa de presentación (REST), permitiendo que evolucionen de forma independiente y segura.
-*   **Idempotencia y Transaccionalidad:** La tabla `payment_sessions` y los estados (`PENDING`, `CONFIRMED`, `EXPIRED`) garantizan que un pago no se pueda confirmar dos veces y que el ciclo de vida de la transacción sea robusto.
-*   **Seguridad Interna:** La `X-API-KEY` (configurable en los `.env`) asegura que solo el servicio REST autorizado pueda comunicarse con el servicio SOAP, protegiendo el acceso directo a la lógica de negocio.
-*   **Entorno de Desarrollo Completo:** El uso de Docker, Healthchecks y Mailhog crea un entorno de desarrollo y pruebas profesional, robusto y fácil de usar para cualquier miembro del equipo.
-*   **ORM (TypeORM):** Cumple con la valoración de usar un ORM y proporciona una capa de abstracción segura y fuertemente tipada para la interacción con la base de datos, previniendo errores comunes como inyecciones SQL.
+Usa Swagger (http://localhost:3000/docs) y sigue este orden:
+
+1) Registrar cliente
+- POST /clients/register
+- Body: { document, names, email, phone }
+- Esperado: `success=true`, `cod_error="00"`, `data.client_id`
+
+2) Recargar billetera
+- POST /wallet/topup
+- Body: { document, phone, amount: 50000 }
+- Esperado: `data.balance` actualizado
+
+3) Iniciar pago
+- POST /payments/initiate
+- Body: { document, phone, amount: 20000 }
+- Esperado: `data.session_id` + mensaje “token enviado”
+- Abre Mailhog y copia el token de 6 dígitos
+
+4) Confirmar pago
+- POST /payments/confirm
+- Body: { session_id, token }
+- Esperado: `data.balance` con el descuento aplicado
+
+5) Consultar saldo
+- GET /wallet/balance?document=...&phone=...
+- Esperado: `data.balance`
+
+Estructura de respuesta (SOAP y REST):
+```
+{
+  "success": boolean,
+  "cod_error": "00" | "01" | "02" | "03" | "04" | "05" | "06" | "07",
+  "message_error": string,
+  "data": { ... }
+}
+```
+
+---
+
+## Decisiones de diseño
+
+- Separación de responsabilidades: SOAP contiene lógica y BD; REST es la interfaz moderna para clientes.
+- Seguridad interna: REST envía `X-API-KEY` y SOAP la valida en cada operación.
+- Robustez del pago: `PaymentSession` con estados `PENDING/CONFIRMED/EXPIRED` y token por correo (Mailhog).
+- DX: Swagger para probar, healthchecks para observar.
+
+---
+
+## Troubleshooting
+
+- REST intentando “localhost” para SOAP:
+  - Revisa `SOAP_ENDPOINT=http://wallet-soap:3001/wsdl` (ya configurado).
+- Healthchecks en “unhealthy”:
+  - Espera 20–30s. Verifica: http://localhost:3000/health y http://localhost:3001/wsdl?wsdl
+  - Logs: `docker compose logs -f wallet-rest` y `docker compose logs -f wallet-soap`
+- JSON malformado en Windows (cURL):
+  - En Git Bash usa comillas simples por fuera del JSON o escapa las internas.
+
+---
