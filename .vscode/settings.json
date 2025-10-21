@@ -1,0 +1,7 @@
+{
+  "editor.formatOnSave": false,
+  "prettier.enable": false,
+  "eslint.rules.customizations": [
+    { "rule": "prettier/prettier", "severity": "off" }
+  ]
+}

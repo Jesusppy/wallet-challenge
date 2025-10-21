@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions name="WalletService"
+             targetNamespace="http://example.com/wallet"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://example.com/wallet"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
+
+  <types>
+    <xsd:schema targetNamespace="http://example.com/wallet">
+      <xsd:element name="RegisterClientRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="document" type="xsd:string"/>
+            <xsd:element name="names" type="xsd:string"/>
+            <xsd:element name="email" type="xsd:string"/>
+            <xsd:element name="phone" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="TopUpWalletRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="document" type="xsd:string"/>
+            <xsd:element name="phone" type="xsd:string"/>
+            <xsd:element name="amount" type="xsd:decimal"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="InitiatePaymentRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="document" type="xsd:string"/>
+            <xsd:element name="phone" type="xsd:string"/>
+            <xsd:element name="amount" type="xsd:decimal"/>
+            <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="ConfirmPaymentRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="session_id" type="xsd:string"/>
+            <xsd:element name="token" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:element name="GetBalanceRequest">
+        <xsd:complexType>
+          <xsd:sequence>
+            <xsd:element name="document" type="xsd:string"/>
+            <xsd:element name="phone" type="xsd:string"/>
+          </xsd:sequence>
+        </xsd:complexType>
+      </xsd:element>
+
+      <xsd:complexType name="StandardResponse">
+        <xsd:sequence>
+          <xsd:element name="success" type="xsd:boolean"/>
+          <xsd:element name="cod_error" type="xsd:string"/>
+          <xsd:element name="message_error" type="xsd:string"/>
+          <xsd:element name="data" type="xsd:anyType" minOccurs="0"/>
+        </xsd:sequence>
+      </xsd:complexType>
+
+      <xsd:element name="StandardResponseElement" type="tns:StandardResponse"/>
+    </xsd:schema>
+  </types>
+
+  <message name="RegisterClientRequest">
+    <part name="parameters" element="tns:RegisterClientRequest"/>
+  </message>
+  <message name="TopUpWalletRequest">
+    <part name="parameters" element="tns:TopUpWalletRequest"/>
+  </message>
+  <message name="InitiatePaymentRequest">
+    <part name="parameters" element="tns:InitiatePaymentRequest"/>
+  </message>
+  <message name="ConfirmPaymentRequest">
+    <part name="parameters" element="tns:ConfirmPaymentRequest"/>
+  </message>
+  <message name="GetBalanceRequest">
+    <part name="parameters" element="tns:GetBalanceRequest"/>
+  </message>
+
+  <message name="StandardResponse">
+    <part name="parameters" element="tns:StandardResponseElement"/>
+  </message>
+
+  <portType name="WalletPortType">
+    <operation name="RegisterClient">
+      <input message="tns:RegisterClientRequest"/>
+      <output message="tns:StandardResponse"/>
+    </operation>
+    <operation name="TopUpWallet">
+      <input message="tns:TopUpWalletRequest"/>
+      <output message="tns:StandardResponse"/>
+    </operation>
+    <operation name="InitiatePayment">
+      <input message="tns:InitiatePaymentRequest"/>
+      <output message="tns:StandardResponse"/>
+    </operation>
+    <operation name="ConfirmPayment">
+      <input message="tns:ConfirmPaymentRequest"/>
+      <output message="tns:StandardResponse"/>
+    </operation>
+    <operation name="GetBalance">
+      <input message="tns:GetBalanceRequest"/>
+      <output message="tns:StandardResponse"/>
+    </operation>
+  </portType>
+
+  <binding name="WalletBinding" type="tns:WalletPortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <operation name="RegisterClient">
+      <soap:operation soapAction="RegisterClient"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="TopUpWallet">
+      <soap:operation soapAction="TopUpWallet"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="InitiatePayment">
+      <soap:operation soapAction="InitiatePayment"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="ConfirmPayment">
+      <soap:operation soapAction="ConfirmPayment"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+    <operation name="GetBalance">
+      <soap:operation soapAction="GetBalance"/>
+      <input><soap:body use="literal"/></input>
+      <output><soap:body use="literal"/></output>
+    </operation>
+  </binding>
+
+  <service name="WalletService">
+    <documentation>Virtual wallet SOAP API</documentation>
+    <port name="WalletPort" binding="tns:WalletBinding">
+      <soap:address location="http://localhost:3001/wsdl"/>
+    </port>
+  </service>
+</definitions>
